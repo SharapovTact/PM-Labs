@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-
+const int DIFF_IN_LETTER_CASE = 32;
 char *readLine(int *isEOF) {
     char *s = NULL;
     size_t len = 0;
@@ -30,10 +30,30 @@ error:
     return NULL;
 }
 
+int isPunctMark(char ch) {
+    if (ch >= ' ' && ch <= '.') {
+        return 1;
+    }
+    return 0;
+}
+
+int areDifferentLetterCase(int ch1, int ch2) {
+    if (ch1 + DIFF_IN_LETTER_CASE == ch2 || ch1 - DIFF_IN_LETTER_CASE == ch2) {
+        return 0;
+    }
+    return 1;
+}
+
 int isPalindromeLine(char *line) {
     int len = strlen(line);
     for (int i = 0, j = len - 1; i < len && j >= 0; i++, j--) {
-        if (line[i] != line[j]) {
+        while (isPunctMark(line[i]) == 1 && i + 1 < len) {
+            i++;
+        }
+        while (isPunctMark(line[j]) == 1 && j - 1 >= 0) {
+            j--;
+        }
+        if (line[i] != line[j] && areDifferentLetterCase(line[i], line[j]) == 1) {
             return 0;
         }
     }
