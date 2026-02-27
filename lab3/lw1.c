@@ -3,9 +3,7 @@
 #include <string.h>
 #include <errno.h>
 
-int isEOF = 0;
-
-char *readLine(void) {
+char *readLine(int *isEOF) {
     char *s = NULL;
     size_t len = 0;
     int chCode;
@@ -18,7 +16,7 @@ char *readLine(void) {
         s[len++] = (char)chCode;
     }
     if (chCode == EOF) {
-        isEOF = 1;
+        *isEOF = 1;
     }
     char *tmp = realloc(s, len + 1);
     if (tmp == NULL) {
@@ -29,25 +27,23 @@ char *readLine(void) {
     return s;
 error:
     free(s);
-    return NULL; //TODO Вернуть ошибку
+    return NULL;
 }
 
 int isPalindromeLine(char *line) {
     int len = strlen(line);
-    if (len == 1) {
-        return 1;
-    }
     for (int i = 0, j = len - 1; i < len && j >= 0; i++, j--) {
-        if (line[i] == line[j]) {
-            return 1;
+        if (line[i] != line[j]) {
+            return 0;
         }
     }
-    return 0;
+    return 1;
 }
 
 int main(void) {
+    int isEOF = 0;
     while (isEOF == 0) {
-        char *line = readLine();
+        char *line = readLine(&isEOF);
         if (line == NULL) {
             return ENOMEM;
         }
