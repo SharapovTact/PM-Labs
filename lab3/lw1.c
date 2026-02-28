@@ -2,7 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+
 const int DIFF_IN_LETTER_CASE = 32;
+
 char *readLine(int *isEOF) {
     char *s = NULL;
     size_t len = 0;
