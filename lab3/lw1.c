@@ -32,14 +32,14 @@ error:
     return NULL;
 }
 
-int isPunctMark(char ch) {
-    if (ch >= ' ' && ch <= '.') {
-        return 1;
+int isPunctMark(char ch) { //TODO Сделать проверку на букву
+    if ((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9')) {
+        return 0;
     }
-    return 0;
+    return 1;
 }
 
-int areDifferentLetterCase(int ch1, int ch2) {
+int areDifferentLetter(int ch1, int ch2) {
     if (ch1 + DIFF_IN_LETTER_CASE == ch2 || ch1 - DIFF_IN_LETTER_CASE == ch2) {
         return 0;
     }
@@ -48,14 +48,14 @@ int areDifferentLetterCase(int ch1, int ch2) {
 
 int isPalindromeLine(char *line) {
     int len = strlen(line);
-    for (int i = 0, j = len - 1; i < len && j >= 0; i++, j--) {
-        while (isPunctMark(line[i]) == 1 && i + 1 < len) {
+    for (int i = 0, j = len - 1; i <= j ; i++, j--) { //TODO Сходятся и идут дальше и ф-ия слишком сложна
+        while (isPunctMark(line[i]) && i + 1 < len) {
             i++;
         }
-        while (isPunctMark(line[j]) == 1 && j - 1 >= 0) {
+        while (isPunctMark(line[j]) && j - 1 >= 0) {
             j--;
         }
-        if (line[i] != line[j] && areDifferentLetterCase(line[i], line[j]) == 1) {
+        if (line[i] != line[j] && areDifferentLetter(line[i], line[j])) {
             return 0;
         }
     }

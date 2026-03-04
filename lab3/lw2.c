@@ -3,13 +3,19 @@
 #include <string.h>
 #include <errno.h>
 #include <ctype.h>
+const int DEFAULT_STR_LEN = 4;
 
 char *readLine(int *isEOF) {
     char *s = NULL;
     size_t len = 0;
     int chCode;
+    int size = DEFAULT_STR_LEN;
+    char *tmp = malloc(size);
     while ((chCode = getchar()) != '\n' && chCode != EOF) {
-        char *tmp = realloc(s, len + 1);
+        if (len == size) {
+            size *= 2;
+            tmp = realloc(s, size);
+        }
         if (tmp == NULL) {
             goto error;
         }
@@ -19,7 +25,7 @@ char *readLine(int *isEOF) {
     if (chCode == EOF) {
         *isEOF = 1;
     }
-    char *tmp = realloc(s, len + 1);
+    tmp = realloc(s, len + 1);
     if (tmp == NULL) {
         goto error;
     }
@@ -43,42 +49,12 @@ int fillLinesArray(int countOfLines, char **linesArray) {
     return 0;
 }
 
-int myStrCmpLowerCase(char *line1, char *line2) {
-    int len1 = strlen(line1);
-    int len2 = strlen(line2);
-    if (len1 < len2) {
-        return -1;
-    }
-    if (len1 > len2) {
-        return 1;
-    }
-    for (int i = 0; i < len1; i++) {
-        if (tolower((int)line1) < tolower((int)line2)) {
-            return -1;
-        }
-        if (tolower((int)line1) > tolower((int)line2)) {
-            return 1;
-        }
-    }
-    return 0;
-}
-
-int bubbleSortLinesArray(char **linesArray, int countOfLines) {
-    char *tmp;
-    for (int i = 0; i < countOfLines - 1; i++) {
-        for (int j = i + 1; j < countOfLines; j++) {
-            if (myStrCmpLowerCase(linesArray[i], linesArray[j]) < 0) {
-                tmp = linesArray[i];
-                linesArray[i] = linesArray[j];
-                linesArray[j] = tmp;
-            }
-        }
-    }
-    return 0;
+int compareStrings(const void *a, const void *b) {
+    return strcmp(*(const char**)a, *(const char**)b);
 }
 
 int printTop(char **linesArray, int countOfLines) {
-    bubbleSortLinesArray(&*linesArray, countOfLines);
+    qsort(&*linesArray, countOfLines, sizeof(const char*), compareStrings);
     for (int i = 0; i < 3 && i < countOfLines; i++) {
         puts(linesArray[i]);
     }
@@ -86,7 +62,7 @@ int printTop(char **linesArray, int countOfLines) {
 }
 
 void freeArray(char **linesArray, int countOfLines) {
-    for (int i = 0; i < countOfLines; i++) {
+    for (int i = countOfLines - 1; i >= 0; i--) {
         free(linesArray[i]);
     }
     free(linesArray);
