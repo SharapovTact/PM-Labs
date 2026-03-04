@@ -82,16 +82,66 @@ void printArray(char **linesArray, const int countOfLines) {
     }
 }
 
-char **splitOnWords(const char **line,  const int countOfLines, int *wordCount) {//TODO Доделать функцию
+int splitLineOnWords(char *line, char **words, int *wordsArraySize, int *wordCount) {
+    int i = 0;
+    char *tmp = NULL;
+    int symbolIndex = 0;
+
+    while (line[i] != '\0') {
+        while (line[i] == ' ' || line[i] == '\t') {
+            i++;
+        }
+        if (line[i] == '\0') {
+            break;
+        }
+        symbolIndex = 0;
+        int lineSize = DEFAULT_STR_LEN;
+        tmp = malloc(lineSize);
+        if (tmp == NULL){
+            return ENOMEM; //TODO Обработать утечку
+        }
+        while (line[i] != '\0' && line[i] != ' ' && line[i] != '\t') {
+            if (symbolIndex == lineSize) {
+                lineSize *= 2;
+                char *new_tmp = realloc(tmp, lineSize);
+                if (new_tmp == NULL) {
+                    free(tmp);
+                    return ENOMEM; //TODO Обработать утечку
+                }
+                tmp = new_tmp;
+            }
+            tmp[symbolIndex++] = line[i++];
+        }
+        tmp[symbolIndex] = '\0';
+        if (wordsArraySize == wordCount) {
+            *wordsArraySize *= 2;
+            words = realloc(words, *wordsArraySize);
+        }
+        words[*wordCount] = tmp;
+        (*wordCount)++;
+    }
+    return 0;
+}
+
+char **splitOnWords(char **linesArray,  const int countOfLines, int *wordCount) {//TODO Доделать функцию
+    int size = DEFAILT_ARRAY_SIZE;
+    *wordCount = 0;
+    char **words = malloc(size * sizeof(char*));
+    for (int i = 0; i < countOfLines; i++) {
+        if (splitLineOnWords(linesArray[i], words, &size, wordCount) == ENOMEM) {
+            freeArray(words, *wordCount);
+            return NULL;
+        }
+    }
+    return words;
+}
+
+char **splitOnUniqWords(char **linesArray, int *uniqWordCount) {//TODO Доделать функцию
 
 }
 
-char **splitOnUniqWords(const char **linesArray, int *uniqWordCount) {//TODO Доделать функцию
-
-}
-
-int *countNumberOfOccurens(const char **uniqWords, const int uniqWordCount, const char **words, const int wordCount){
-    int *numberOfOccurens = malloc(uniqWordCount);
+int *countNumberOfOccurens(char **uniqWords, int uniqWordCount, char **words, int wordCount){
+    int *numberOfOccurens = malloc(uniqWordCount * sizeof(int));
     for (int i = 0; i < uniqWordCount; i++) {
         numberOfOccurens[i] = 0;
         for (int j = 0; j < wordCount; j++) {
@@ -103,18 +153,22 @@ int *countNumberOfOccurens(const char **uniqWords, const int uniqWordCount, cons
     return numberOfOccurens;
 }
 
-void printFreqOfWords(const char **linesArray,  const int countOfLines) {
+void printFreqOfWords(char **linesArray,  const int countOfLines) {
     int uniqWordCount = 0;
     int wordCount = 0;
     char **words = splitOnWords(linesArray, countOfLines, &wordCount);
-    char **uniqWords = splitOnUniqWords(words, &uniqWordCount);
-    int *numberOfOccurens = countNumberOfOccurens(uniqWords, uniqWordCount, words, wordCount);
+    printArray(words, wordCount);//ОТЛАДКА
+    //char **uniqWords = splitOnUniqWords(words, &uniqWordCount);
+    //int *numberOfOccurens = countNumberOfOccurens(uniqWords, uniqWordCount, words, wordCount);
+
     //TODO Сделать вывод уникальных слов и их вхождений
-    //TODO сделать очистку
+    //TODO сделать очистку words и uniqWords
 }
 
 int main() {
     int countOfLines;
     char **textArray = fillLinesArray(&countOfLines);
-    printArray(textArray, countOfLines);
+    printFreqOfWords(textArray, countOfLines);
+    //printArray(textArray, countOfLines);
+    //TODO Сделать ошибку
 }
