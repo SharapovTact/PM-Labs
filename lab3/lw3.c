@@ -13,6 +13,7 @@ char *readLine(int *isEOF) {
     int chCode;
     int size = DEFAULT_STR_LEN;
     char *tmp = malloc(size);
+
     while ((chCode = getchar()) != '\n' && chCode != EOF) {
         if (len == size) {
             size *= 2;
@@ -24,6 +25,7 @@ char *readLine(int *isEOF) {
         s = tmp;
         s[len++] = (char)chCode;
     }
+
     if (chCode == EOF) {
         *isEOF = 1;
     }
@@ -82,84 +84,108 @@ void printArray(char **linesArray, const int countOfLines) {
     }
 }
 
-int splitLineOnWords(char *line, char **words, int *wordsArraySize, int *wordCount) {
+int isFirstOccurens(char **words, const int wordCount, char *word) {
+    for (int i = 0; i < wordCount; i++) {
+        if (strcmp(words[i], word) == 0) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+char **countNumberOfOccurens(char **words, int *wordsArraySize, int *wordCount, char *word, int *numberOfOccurens, int *numberOfOccurensSize){
+    int wordIndex;
+    if ((wordIndex = isFirstOccurens(words, *wordCount, word)) != -1) {
+        numberOfOccurens[wordIndex] += 1;
+    }
+    else { //Добавление словва в массив
+        wordIndex = *wordCount;
+        (*wordCount)++;
+        if (*wordsArraySize == *wordCount) {
+            char **tempWords = words;
+            *wordsArraySize *= 2;
+            tempWords = malloc(*wordsArraySize * sizeof(char*));
+            words = tempWords;
+        }
+        words[wordIndex] = word;
+        if (*numberOfOccurensSize == *wordCount) {
+            int *tempNumberOfOccurens = numberOfOccurens;
+            *numberOfOccurensSize *= 2;
+            numberOfOccurens = malloc(*numberOfOccurensSize * sizeof(int));
+            numberOfOccurens = tempNumberOfOccurens;
+        }
+        numberOfOccurens[wordIndex] = 1;
+    }
+    return words;
+}
+
+int splitLineOnWords(char *line, char **words, int *wordsArraySize, int *uniqWordCount, int *numberOfOccurens, int *numberOfOccurensSize) { //TODO Подумать над названием
     int i = 0;
     char *tmp = NULL;
     int symbolIndex = 0;
 
     while (line[i] != '\0') {
+        //Прохождение по строке без считки слова
         while (line[i] == ' ' || line[i] == '\t') {
             i++;
         }
         if (line[i] == '\0') {
             break;
         }
+        //Инициализация переменных считывания слова
         symbolIndex = 0;
         int lineSize = DEFAULT_STR_LEN;
         tmp = malloc(lineSize);
         if (tmp == NULL){
-            return ENOMEM; //TODO Обработать утечку
+            return ENOMEM;
         }
+        //Считывание слова
         while (line[i] != '\0' && line[i] != ' ' && line[i] != '\t') {
             if (symbolIndex == lineSize) {
                 lineSize *= 2;
-                char *new_tmp = realloc(tmp, lineSize);
-                if (new_tmp == NULL) {
+                tmp = realloc(tmp, lineSize);
+                if (tmp == NULL) {
                     free(tmp);
-                    return ENOMEM; //TODO Обработать утечку
+                    return ENOMEM;
                 }
-                tmp = new_tmp;
             }
             tmp[symbolIndex++] = line[i++];
         }
         tmp[symbolIndex] = '\0';
-        if (wordsArraySize == wordCount) {
-            *wordsArraySize *= 2;
-            words = realloc(words, *wordsArraySize);
-        }
-        words[*wordCount] = tmp;
-        (*wordCount)++;
+        //Счёт слов
+        words = countNumberOfOccurens(words, wordsArraySize, uniqWordCount, tmp, numberOfOccurens, numberOfOccurensSize);
     }
     return 0;
 }
 
-char **splitOnWords(char **linesArray,  const int countOfLines, int *wordCount) {//TODO Доделать функцию
-    int size = DEFAILT_ARRAY_SIZE;
-    *wordCount = 0;
-    char **words = malloc(size * sizeof(char*));
+char **splitOnWords(char **linesArray,  const int countOfLines, int *uniqWordCount, int *numberOfOccurens, int *numberOfOccurensSize ) { //TODO Подумать над названием
+    int wordsArraySize = DEFAILT_ARRAY_SIZE;
+    *uniqWordCount = 0;
+    char **words = malloc(wordsArraySize * sizeof(char*));
     for (int i = 0; i < countOfLines; i++) {
-        if (splitLineOnWords(linesArray[i], words, &size, wordCount) == ENOMEM) {
-            freeArray(words, *wordCount);
+        if (splitLineOnWords(linesArray[i], words, &wordsArraySize, uniqWordCount, numberOfOccurens, numberOfOccurensSize) == ENOMEM) {
+            freeArray(words, *uniqWordCount);
             return NULL;
         }
     }
     return words;
 }
 
-char **splitOnUniqWords(char **linesArray, int *uniqWordCount) {//TODO Доделать функцию
-
-}
-
-int *countNumberOfOccurens(char **uniqWords, int uniqWordCount, char **words, int wordCount){
-    int *numberOfOccurens = malloc(uniqWordCount * sizeof(int));
+void printOccurensyInfo(char **uniqWords, const int uniqWordCount, int *numberOfOccurens) {
     for (int i = 0; i < uniqWordCount; i++) {
-        numberOfOccurens[i] = 0;
-        for (int j = 0; j < wordCount; j++) {
-            if (strcmp(uniqWords[i], words[j]) == 0) {
-                numberOfOccurens[i] += 1;
-            }
-        }
+        printf("%s - %d\n", uniqWords[i], numberOfOccurens[i]);
     }
-    return numberOfOccurens;
 }
 
 void printFreqOfWords(char **linesArray,  const int countOfLines) {
-    int uniqWordCount = 0;
-    int wordCount = 0;
-    char **words = splitOnWords(linesArray, countOfLines, &wordCount);
-    printArray(words, wordCount);//ОТЛАДКА
+    int uniqWordCount;
+    int numberOfOccurensSize = DEFAILT_ARRAY_SIZE;
+    int *numberOfOccurens = malloc(numberOfOccurensSize * sizeof(int)); //TODO Не забыть освободить память
+    char **uniqWords = splitOnWords(linesArray, countOfLines, &uniqWordCount, numberOfOccurens, &numberOfOccurensSize);
+    printOccurensyInfo(uniqWords, uniqWordCount, numberOfOccurens);
+    //printArray(words, uniqWordCount);//ОТЛАДКА
     //char **uniqWords = splitOnUniqWords(words, &uniqWordCount);
-    //int *numberOfOccurens = countNumberOfOccurens(uniqWords, uniqWordCount, words, wordCount);
+
 
     //TODO Сделать вывод уникальных слов и их вхождений
     //TODO сделать очистку words и uniqWords
