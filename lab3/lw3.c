@@ -84,11 +84,39 @@ void printArray(char **linesArray, const int countOfLines) {
     }
 }
 
+char *stringToLower(char *str) {
+    int tmpSize = DEFAULT_STR_LEN;
+    char *tmp = malloc(tmpSize * sizeof(char));
+    if (tmp == NULL) {
+        return NULL;
+    }
+    int i = 0;
+    while (str[i] != '\0' ) {
+        if (i == tmpSize) {
+            tmpSize *= 2;
+            tmp = realloc(tmp, tmpSize * sizeof(char));
+            if (tmp == NULL) {
+                return NULL;
+            }
+        }
+        tmp[i] = (char)tolower(str[i]);
+        i++;
+    }
+    tmp[i] = '\0';
+    return tmp;
+}
+
 int isFirstOccurens(char **words, const int wordCount, char *word) {
     for (int i = 0; i < wordCount; i++) {
-        if (strcmp(words[i], word) == 0) {
+        char *cmpWord1 = stringToLower(word);
+        char *cmpWord2 = stringToLower(words[i]);
+        if (strcmp(cmpWord1, cmpWord2) == 0) {
+            free(cmpWord1);
+            free(cmpWord2);
             return i;
         }
+        free(cmpWord1);
+        free(cmpWord2);
     }
     return -1;
 }
@@ -135,7 +163,7 @@ int splitLineOnWords(char *line, char **words, int *wordsArraySize, int *uniqWor
         //Инициализация переменных считывания слова
         symbolIndex = 0;
         int lineSize = DEFAULT_STR_LEN;
-        tmp = malloc(lineSize);
+        tmp = malloc(lineSize * sizeof(char));
         if (tmp == NULL){
             return ENOMEM;
         }
@@ -143,7 +171,7 @@ int splitLineOnWords(char *line, char **words, int *wordsArraySize, int *uniqWor
         while (line[i] != '\0' && line[i] != ' ' && line[i] != '\t') {
             if (symbolIndex == lineSize) {
                 lineSize *= 2;
-                tmp = realloc(tmp, lineSize);
+                tmp = realloc(tmp, lineSize * sizeof(char));
                 if (tmp == NULL) {
                     free(tmp);
                     return ENOMEM;
