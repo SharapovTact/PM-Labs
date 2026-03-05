@@ -147,7 +147,7 @@ char **countNumberOfOccurens(char **words, int *wordsArraySize, int *wordCount, 
     return words;
 }
 
-int splitLineOnWords(char *line, char **words, int *wordsArraySize, int *uniqWordCount, int *numberOfOccurens, int *numberOfOccurensSize) { //TODO Подумать над названием
+int splitLineOnWordsOccurens(char *line, char **words, int *wordsArraySize, int *uniqWordCount, int *numberOfOccurens, int *numberOfOccurensSize) {
     int i = 0;
     char *tmp = NULL;
     int symbolIndex = 0;
@@ -186,12 +186,12 @@ int splitLineOnWords(char *line, char **words, int *wordsArraySize, int *uniqWor
     return 0;
 }
 
-char **splitOnWords(char **linesArray,  const int countOfLines, int *uniqWordCount, int *numberOfOccurens, int *numberOfOccurensSize ) { //TODO Подумать над названием
+char **splitFileOnWordsOccurens(char **linesArray,  const int countOfLines, int *uniqWordCount, int *numberOfOccurens, int *numberOfOccurensSize ) {
     int wordsArraySize = DEFAILT_ARRAY_SIZE;
     *uniqWordCount = 0;
     char **words = malloc(wordsArraySize * sizeof(char*));
     for (int i = 0; i < countOfLines; i++) {
-        if (splitLineOnWords(linesArray[i], words, &wordsArraySize, uniqWordCount, numberOfOccurens, numberOfOccurensSize) == ENOMEM) {
+        if (splitLineOnWordsOccurens(linesArray[i], words, &wordsArraySize, uniqWordCount, numberOfOccurens, numberOfOccurensSize) == ENOMEM) {
             freeArray(words, *uniqWordCount);
             return NULL;
         }
@@ -205,24 +205,38 @@ void printOccurensyInfo(char **uniqWords, const int uniqWordCount, int *numberOf
     }
 }
 
+void lexicoSort(char **uniqWords, const int uniqWordCount, int *numberOfOccurens) {
+    for (int i = 0; i < uniqWordCount - 1; i++) {
+        for (int j = i + 1; j < uniqWordCount; j++) {
+            char *cmpWord1 = stringToLower(uniqWords[i]);
+            char *cmpWord2 = stringToLower(uniqWords[j]);
+            if (strcmp(cmpWord1, cmpWord2) < 0) {
+                char *tmpWord = uniqWords[i];
+                uniqWords[i] = uniqWords[j];
+                uniqWords[j] = tmpWord;
+                int tmpValue = numberOfOccurens[i];
+                numberOfOccurens[i] = numberOfOccurens[j];
+                numberOfOccurens[j] = tmpValue;
+            }
+            free(cmpWord1);
+            free(cmpWord2);
+        }
+    }
+}
+
 void printFreqOfWords(char **linesArray,  const int countOfLines) {
     int uniqWordCount;
     int numberOfOccurensSize = DEFAILT_ARRAY_SIZE;
     int *numberOfOccurens = malloc(numberOfOccurensSize * sizeof(int)); //TODO Не забыть освободить память
-    char **uniqWords = splitOnWords(linesArray, countOfLines, &uniqWordCount, numberOfOccurens, &numberOfOccurensSize);
+    char **uniqWords = splitFileOnWordsOccurens(linesArray, countOfLines, &uniqWordCount, numberOfOccurens, &numberOfOccurensSize);
+    lexicoSort(uniqWords, uniqWordCount, numberOfOccurens);
     printOccurensyInfo(uniqWords, uniqWordCount, numberOfOccurens);
-    //printArray(words, uniqWordCount);//ОТЛАДКА
-    //char **uniqWords = splitOnUniqWords(words, &uniqWordCount);
-
-
-    //TODO Сделать вывод уникальных слов и их вхождений
-    //TODO сделать очистку words и uniqWords
+    freeArray(uniqWords, uniqWordCount);
+    free(numberOfOccurens);
 }
 
 int main() {
     int countOfLines;
     char **textArray = fillLinesArray(&countOfLines);
     printFreqOfWords(textArray, countOfLines);
-    //printArray(textArray, countOfLines);
-    //TODO Сделать ошибку
 }
