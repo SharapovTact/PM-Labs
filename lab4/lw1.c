@@ -65,6 +65,7 @@ int checkDays(Date date)
             if (date.day <= 31) return 1;
             break;
     }
+    return 0;
 }
 
 int isCorrectDate(Date date)
@@ -112,7 +113,7 @@ void sortDates(Date *dateArray, const int countOfDates)
 {
     for (int i = 0; i < countOfDates - 1; i++)
     {
-        for (int j = i + 1; j < countOfDates - 1; j++)
+        for (int j = i + 1; j < countOfDates; j++)
         {
             if (dateCmp(dateArray[j], dateArray[i]) == -1)
             {
