@@ -25,4 +25,5 @@ add_executable(PM_Labs
         lab4/test.c
         lab3/lw3.c
         lab4/lw1.c
+        lab4/lw2.c
 )
