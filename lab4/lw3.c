@@ -98,6 +98,31 @@ int inputOctagon(Octagon *oct)
     return 0;
 }
 
+int calcParticiallySquare(const Octagon *oct)
+{
+    int sum = 0;
+    for (int i = 0; i < oct->countOfVertex; i++)
+    {
+        int j = (i + 1) % oct->countOfVertex;
+        Point p1 = oct->vertices[i];
+        Point p2 = oct->vertices[j];
+        sum += p1.x * p2.y - p1.y * p2.x;
+    }
+
+    return sum;
+}
+
+void printOctagSquare(const Octagon *oct)
+{
+    int sum = calcParticiallySquare(oct);
+    printf("Square is: %d", sum / 2);
+    if (sum % 2 != 0)
+    {
+        printf(".5");
+    }
+    puts("");
+}
+
 int main(void)
 {
     Octagon oct;
@@ -113,6 +138,7 @@ int main(void)
     if (isConvex(&oct))
     {
         puts("Convex");
+        printOctagSquare(&oct);
     }
     else
     {
