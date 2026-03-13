@@ -60,34 +60,34 @@ error:
 
 void freeCitiesArray(City *citiesArray, const int countOfCities)
 {
-    for (int i = 0; i < countOfCities; i++)
+    for (int i = 0; i < countOfCities && citiesArray != NULL; i++)
     {
         free(citiesArray[i].name);
     }
     free(citiesArray);
 }
 
-City *readCities(const int countOfCities)
+int readCities(City **citiesArray, const int countOfCities)
 {
-    City *citiesArray = malloc(countOfCities * sizeof(City));
+    *citiesArray = malloc(countOfCities * sizeof(City));
+    if (*citiesArray == NULL) {
+        return ENOMEM;
+    }
+
     for (int i = 0; i < countOfCities; i++)
     {
-        if (scanf("%d %d", &citiesArray[i].point.x, &citiesArray[i].point.y) == -1)
+        if (scanf("%d %d", &(*citiesArray)[i].point.x, &(*citiesArray)[i].point.y) == -1)
         {
-            goto inputError;
+            puts(INPUT_ERROR);
+            return EBADMSG;
         }
         getchar();
-        if ((citiesArray[i].name = readLine()) == NULL)
+        if (((*citiesArray)[i].name = readLine()) == NULL)
         {
-            goto memoryError;
+            return ENOMEM;
         }
     }
-    return citiesArray;
-memoryError:
-    return NULL;
-inputError:
-    puts(INPUT_ERROR);
-    return NULL;
+    return 0;
 }
 
 int readPoint(Point *p)
@@ -98,13 +98,12 @@ int readPoint(Point *p)
     }
     return 0;
 inputError:
-    puts(INPUT_ERROR);
     return EBADMSG;
 }
 
 void printCity(City c)
 {
-    printf("%s: X: %d Y: %d\n", c.name, c.point.x, c.point.y);
+    printf("%s (%d; %d) Distance = %d\n", c.name, c.point.x, c.point.y, c.distance);
 }
 
 void printPoint(Point p)
@@ -112,38 +111,82 @@ void printPoint(Point p)
     printf("X: %d Y: %d", p.x, p.y);
 }
 
+int calcDistanceFromUserToCity(const Point userPoint, City *city)
+{
+    city->distance = abs(userPoint.x - city->point.x) + abs(userPoint.y - city->point.y);
+}
+
+void countDistance(const Point userPoint, City *citiesArray, const int countOfCities)
+{
+    for (int i = 0; i < countOfCities; i++)
+    {
+        calcDistanceFromUserToCity(userPoint, &citiesArray[i]);
+    }
+}
+
+int sortByDistance(City *citiesArray, const int countOfCities)
+{
+    for (int i = 0; i < countOfCities - 1; i++)
+    {
+        for (int j = i + 1; j < countOfCities; j++)
+        {
+            if (citiesArray[i].distance > citiesArray[j].distance)
+            {
+                City temp = citiesArray[i];
+                citiesArray[i] = citiesArray[j];
+                citiesArray[j] = temp;
+            }
+        }
+    }
+}
+
+void printNearestCities(City *citiesArray, const int countOfCities)
+{
+    const int minDistance = citiesArray[0].distance;
+    puts("Nearest:");
+    for (int i = 0; i < countOfCities; i++)
+    {
+        if (citiesArray[i].distance == minDistance)
+        {
+            printCity(citiesArray[i]);
+        }
+    }
+}
+
 int main(void)
 {
     int countOfCities;
-    int isCorrectInput = 0;
     if (scanf("%d", &countOfCities) == -1)
     {
         goto inputError;
     }
     City *citiesArray;
     Point userPoint;
-    if ((citiesArray = readCities(countOfCities)) == NULL)
+    switch (readCities(&citiesArray, countOfCities))
     {
-        goto memoryError;
+        case ENOMEM:
+            goto memoryError;
+        case EBADMSG:
+            goto inputError;
+        default:
+            break;
     }
     if (readPoint(&userPoint) == EBADMSG)
     {
         goto inputError;
     }
-    //ОТЛАДОЧНЫЙ ВЫВОД
-    for (int i = 0; i < countOfCities; i++)
-    {
-        printCity(citiesArray[i]);
-    }
-    printPoint(userPoint);
-    //TODO У нас есть считанные данные, теперь их надо обработать
+
+    countDistance(userPoint, citiesArray, countOfCities);
+    sortByDistance(citiesArray, countOfCities);
+    printNearestCities(citiesArray, countOfCities);
+
     freeCitiesArray(citiesArray, countOfCities);
     return 0;
 memoryError:
     puts(MEMORY_ERROR);
     freeCitiesArray(citiesArray, countOfCities);
-    return 1;
+    return ENOMEM;
 inputError:
     puts(INPUT_ERROR);
-    return 1;
+    return EBADMSG;
 }
