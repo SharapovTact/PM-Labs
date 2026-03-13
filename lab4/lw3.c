@@ -13,6 +13,12 @@ typedef struct
     int y;
 } Point;
 
+typedef struct
+{
+    int countOfVertex;
+    Point *vertices;
+} Octagon;
+
 int readVertex(Point **vertexArray, const int countOfVertex)
 {
     *vertexArray = malloc(countOfVertex * sizeof(Point));
@@ -46,15 +52,56 @@ void printVertex(Point p)
     printf("(%d; %d)\n", p.x, p.y);
 }
 
-int main(void)
+int findCross(Point p1, Point p2, Point p3)
+{
+    return (p2.x - p1.x) * (p3.y - p2.y) - (p2.y - p1.y) * (p3.x - p2.x);
+}
+
+bool isConvex(const Octagon* oct)
+{
+    bool isConvex = false;
+    for (int i = 0; i < oct->countOfVertex; i++)
+    {
+        Point p1 = oct->vertices[i];
+        Point p2 = oct->vertices[(i + 1) % oct->countOfVertex];
+        Point p3 = oct->vertices[(i + 2) % oct->countOfVertex];
+        int cross = findCross(p1, p2, p3);
+        if (cross > 0)
+        {
+            isConvex = true;
+        }
+        if (cross < 0)
+        {
+            return false;
+        }
+    }
+    return isConvex;
+}
+
+int inputOctagon(Octagon *oct)
 {
     int countOfVertex;
-    Point *vertexArray;
-    if (scanf("%d", &countOfVertex) == -1)
+    if (scanf("%d", &countOfVertex) == -1 || countOfVertex < 3)
     {
-        goto inputError;
+        return EBADMSG;
     }
-    switch (readVertex(&vertexArray, countOfVertex))
+    (*oct).countOfVertex = countOfVertex;
+    switch (readVertex(&(*oct).vertices, (*oct).countOfVertex))
+    {
+        case ENOMEM:
+            return ENOMEM;
+        case EBADMSG:
+            return EBADMSG;
+        default:
+            break;
+    }
+    return 0;
+}
+
+int main(void)
+{
+    Octagon oct;
+    switch (inputOctagon(&oct))
     {
         case ENOMEM:
             goto memoryError;
@@ -63,21 +110,22 @@ int main(void)
         default:
             break;
     }
-
-    //ОТЛАДОЧНЫЙ ВЫВОД
-    for (int i = 0; i < countOfVertex; i++)
+    if (isConvex(&oct))
     {
-        printVertex(vertexArray[i]);
+        puts("Convex");
     }
-
-    free(vertexArray);
+    else
+    {
+        puts("Not convex");
+    }
+    free(oct.vertices);
     return 0;
 memoryError:
     puts(MEMORY_ERROR);
-    free(vertexArray);
+    free(oct.vertices);
     return ENOMEM;
 inputError:
     puts(INPUT_ERROR);
-    free(vertexArray);
+    free(oct.vertices);
     return EBADMSG;
 }
