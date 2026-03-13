@@ -2,9 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include <ctype.h>
 
 const int DEFAULT_STR_LEN = 4;
+const char *INPUT_ERROR = "Ошибка ввода!";
+const char *MEMORY_ERROR = "Недостаточно памяти!";
 
 typedef struct
 {
@@ -71,24 +72,34 @@ City *readCities(const int countOfCities)
     City *citiesArray = malloc(countOfCities * sizeof(City));
     for (int i = 0; i < countOfCities; i++)
     {
-        scanf("%d %d", &citiesArray[i].point.x, &citiesArray[i].point.y);
+        if (scanf("%d %d", &citiesArray[i].point.x, &citiesArray[i].point.y) == -1)
+        {
+            goto inputError;
+        }
         getchar();
         if ((citiesArray[i].name = readLine()) == NULL)
         {
-            goto error;
+            goto memoryError;
         }
     }
     return citiesArray;
-error:
-    freeCitiesArray(citiesArray, countOfCities);
+memoryError:
+    return NULL;
+inputError:
+    puts(INPUT_ERROR);
     return NULL;
 }
 
-Point readPoint()
+int readPoint(Point *p)
 {
-    Point p;
-    scanf("%d%d", &p.x, &p.y);
-    return p;
+    if (scanf("%d %d", &p->x, &p->y) == -1)
+    {
+        goto inputError;
+    }
+    return 0;
+inputError:
+    puts(INPUT_ERROR);
+    return EBADMSG;
 }
 
 void printCity(City c)
@@ -105,14 +116,20 @@ int main(void)
 {
     int countOfCities;
     int isCorrectInput = 0;
-    scanf("%d", &countOfCities);
+    if (scanf("%d", &countOfCities) == -1)
+    {
+        goto inputError;
+    }
     City *citiesArray;
     Point userPoint;
     if ((citiesArray = readCities(countOfCities)) == NULL)
     {
-        goto error;
+        goto memoryError;
     }
-    userPoint = readPoint();
+    if (readPoint(&userPoint) == EBADMSG)
+    {
+        goto inputError;
+    }
     //ОТЛАДОЧНЫЙ ВЫВОД
     for (int i = 0; i < countOfCities; i++)
     {
@@ -120,8 +137,13 @@ int main(void)
     }
     printPoint(userPoint);
     //TODO У нас есть считанные данные, теперь их надо обработать
+    freeCitiesArray(citiesArray, countOfCities);
     return 0;
-error:
-    puts("Недостаточно памяти!");
+memoryError:
+    puts(MEMORY_ERROR);
+    freeCitiesArray(citiesArray, countOfCities);
+    return 1;
+inputError:
+    puts(INPUT_ERROR);
     return 1;
 }
