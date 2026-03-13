@@ -15,31 +15,38 @@ typedef struct
 typedef struct
 {
     Point point;
+    int distance;
     char *name;
 } City;
 
-char *readLine() {
+char *readLine()
+{
     char *s = NULL;
     size_t len = 0;
     int chCode;
     int size = DEFAULT_STR_LEN;
     char *tmp = malloc(size);
-    if (tmp == NULL) {
+    if (tmp == NULL)
+    {
         goto error;
     }
-    while ((chCode = getchar()) != '\n' && chCode != EOF) {
-        if (len == size) {
+    while ((chCode = getchar()) != '\n' && chCode != EOF)
+    {
+        if (len == size)
+        {
             size *= 2;
             tmp = realloc(s, size);
         }
-        if (tmp == NULL) {
+        if (tmp == NULL)
+        {
             goto error;
         }
         s = tmp;
         s[len++] = (char)chCode;
     }
     tmp = realloc(s, len + 1);
-    if (tmp == NULL) {
+    if (tmp == NULL)
+    {
         goto error;
     }
     s = tmp;
@@ -80,7 +87,8 @@ error:
 Point readPoint()
 {
     Point p;
-    scanf("%d %d", &p.x, &p.y);
+    scanf("%d%d", &p.x, &p.y);
+    return p;
 }
 
 void printCity(City c)
