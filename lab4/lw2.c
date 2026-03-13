@@ -78,7 +78,6 @@ int readCities(City **citiesArray, const int countOfCities)
     {
         if (scanf("%d %d", &(*citiesArray)[i].point.x, &(*citiesArray)[i].point.y) == -1)
         {
-            puts(INPUT_ERROR);
             return EBADMSG;
         }
         getchar();
