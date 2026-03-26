@@ -3,7 +3,7 @@
 #include <string.h>
 #include <errno.h>
 
-const int DEFAULT_STR_LEN = 4;
+constexpr int DEFAULT_STR_LEN = 4;
 const char *INPUT_ERROR = "Ошибка ввода!";
 const char *MEMORY_ERROR = "Недостаточно памяти!";
 
@@ -17,55 +17,50 @@ typedef struct
 {
     int countOfVertex;
     Point *vertices;
-} Octagon;
+} Polygon;
 
-int readVertex(Point **vertexArray, const int countOfVertex)
+void PrintVertex(Point p)
+{
+    printf("(%d; %d)\n", p.x, p.y);
+}
+
+int ReadVertex(Point **vertexArray, const int countOfVertex)
 {
     *vertexArray = malloc(countOfVertex * sizeof(Point));
-    if (*vertexArray == NULL) {
+    if (*vertexArray == NULL)
+    {
         return ENOMEM;
     }
 
     for (int i = 0; i < countOfVertex; i++)
     {
-        if (scanf("%d %d", &(*vertexArray)[i].x, &(*vertexArray)[i].y) == -1)
+        int x;
+        int y;
+        if (scanf("%d %d", &x, &y) == -1)
         {
             return EBADMSG;
         }
+        (*vertexArray)[i].x = abs(x);
+        (*vertexArray)[i].y = abs(y);
+        PrintVertex((*vertexArray)[i]);
     }
     return 0;
 }
 
-int readPoint(Point *p)
+int FindCross(const Point p1, const Point p2, const Point p3)
 {
-    if (scanf("%d %d", &p->x, &p->y) == -1)
-    {
-        goto inputError;
-    }
-    return 0;
-inputError:
-    return EBADMSG;
+    return abs(abs(p2.x - p1.x) * abs(p3.y - p2.y) - abs(p2.y - p1.y) * abs(p3.x - p2.x));
 }
 
-void printVertex(Point p)
-{
-    printf("(%d; %d)\n", p.x, p.y);
-}
-
-int findCross(Point p1, Point p2, Point p3)
-{
-    return (p2.x - p1.x) * (p3.y - p2.y) - (p2.y - p1.y) * (p3.x - p2.x);
-}
-
-bool isConvex(const Octagon* oct)
+bool IsConvex(const Polygon* poly)
 {
     bool isConvex = false;
-    for (int i = 0; i < oct->countOfVertex; i++)
+    for (int i = 0; i < poly->countOfVertex; i++)
     {
-        Point p1 = oct->vertices[i];
-        Point p2 = oct->vertices[(i + 1) % oct->countOfVertex];
-        Point p3 = oct->vertices[(i + 2) % oct->countOfVertex];
-        int cross = findCross(p1, p2, p3);
+        Point p1 = poly->vertices[i];
+        Point p2 = poly->vertices[(i + 1) % poly->countOfVertex];
+        Point p3 = poly->vertices[(i + 2) % poly->countOfVertex];
+        int cross = FindCross(p1, p2, p3);
         if (cross > 0)
         {
             isConvex = true;
@@ -78,15 +73,15 @@ bool isConvex(const Octagon* oct)
     return isConvex;
 }
 
-int inputOctagon(Octagon *oct)
+int InputPolygon(Polygon *poly)
 {
     int countOfVertex;
     if (scanf("%d", &countOfVertex) == -1 || countOfVertex < 3)
     {
         return EBADMSG;
     }
-    (*oct).countOfVertex = countOfVertex;
-    switch (readVertex(&(*oct).vertices, (*oct).countOfVertex))
+    (*poly).countOfVertex = countOfVertex;
+    switch (ReadVertex(&(*poly).vertices, (*poly).countOfVertex)) //TODO изменить названия
     {
         case ENOMEM:
             return ENOMEM;
@@ -98,23 +93,23 @@ int inputOctagon(Octagon *oct)
     return 0;
 }
 
-int calcParticiallySquare(const Octagon *oct)
+int CalcParticiallySquare(const Polygon *poly)
 {
     int sum = 0;
-    for (int i = 0; i < oct->countOfVertex; i++)
+    for (int i = 0; i < poly->countOfVertex; i++)
     {
-        int j = (i + 1) % oct->countOfVertex;
-        Point p1 = oct->vertices[i];
-        Point p2 = oct->vertices[j];
+        int j = (i + 1) % poly->countOfVertex;
+        Point p1 = poly->vertices[i];
+        Point p2 = poly->vertices[j];
         sum += p1.x * p2.y - p1.y * p2.x;
     }
 
     return sum;
 }
 
-void printOctagSquare(const Octagon *oct)
+void PrintPolySquare(const Polygon *poly)
 {
-    int sum = calcParticiallySquare(oct);
+    const int sum = CalcParticiallySquare(poly);
     printf("Square is: %d", sum / 2);
     if (sum % 2 != 0)
     {
@@ -125,8 +120,8 @@ void printOctagSquare(const Octagon *oct)
 
 int main(void)
 {
-    Octagon oct;
-    switch (inputOctagon(&oct))
+    Polygon poly;
+    switch (InputPolygon(&poly))
     {
         case ENOMEM:
             goto memoryError;
@@ -135,23 +130,23 @@ int main(void)
         default:
             break;
     }
-    if (isConvex(&oct))
+    if (IsConvex(&poly))
     {
         puts("Convex");
-        printOctagSquare(&oct);
+        PrintPolySquare(&poly);
     }
     else
     {
         puts("Not convex");
     }
-    free(oct.vertices);
+    free(poly.vertices);
     return 0;
 memoryError:
     puts(MEMORY_ERROR);
-    free(oct.vertices);
+    free(poly.vertices);
     return ENOMEM;
 inputError:
     puts(INPUT_ERROR);
-    free(oct.vertices);
+    free(poly.vertices);
     return EBADMSG;
 }

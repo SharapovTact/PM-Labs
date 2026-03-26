@@ -3,9 +3,9 @@
 #include <string.h>
 #include <errno.h>
 
-const int DEFAULT_STR_LEN = 4;
-const char *INPUT_ERROR = "Ошибка ввода!";
-const char *MEMORY_ERROR = "Недостаточно памяти!";
+constexpr int DEFAULT_STR_LEN = 4;
+const char *INPUT_ERROR = "ERROR INPUT!";
+const char *MEMORY_ERROR = "NO MEMORY!";
 
 typedef struct
 {
@@ -54,7 +54,10 @@ char *readLine()
     s[len] = '\0';
     return s;
 error:
-    free(s);
+    if (s != NULL)
+    {
+        free(s);
+    }
     return NULL;
 }
 
@@ -64,13 +67,21 @@ void freeCitiesArray(City *citiesArray, const int countOfCities)
     {
         free(citiesArray[i].name);
     }
-    free(citiesArray);
+    if (citiesArray != NULL)
+    {
+        free(citiesArray);
+    }
 }
 
 int readCities(City **citiesArray, const int countOfCities)
 {
+    if (countOfCities == 0)
+    {
+        return EBADMSG;
+    }
     *citiesArray = malloc(countOfCities * sizeof(City));
-    if (*citiesArray == NULL) {
+    if (*citiesArray == NULL)
+    {
         return ENOMEM;
     }
 
@@ -93,11 +104,9 @@ int readPoint(Point *p)
 {
     if (scanf("%d %d", &p->x, &p->y) == -1)
     {
-        goto inputError;
+        return EBADMSG;
     }
     return 0;
-inputError:
-    return EBADMSG;
 }
 
 void printCity(City c)
@@ -123,23 +132,27 @@ void countDistance(const Point userPoint, City *citiesArray, const int countOfCi
     }
 }
 
-int sortByDistance(City *citiesArray, const int countOfCities)
+int compareCity(const void *sort1, const void *sort2)
 {
-    for (int i = 0; i < countOfCities - 1; i++)
+    const int sortI1 = ((const City*)sort1)->distance;
+    const int sortJ2 = ((const City*)sort2)->distance;
+    if (sortI1 < sortJ2)
     {
-        for (int j = i + 1; j < countOfCities; j++)
-        {
-            if (citiesArray[i].distance > citiesArray[j].distance)
-            {
-                City temp = citiesArray[i];
-                citiesArray[i] = citiesArray[j];
-                citiesArray[j] = temp;
-            }
-        }
+        return -1;
     }
+    if (sortI1 == sortJ2)
+    {
+        return 0;
+    }
+    return 1;
 }
 
-void printNearestCities(City *citiesArray, const int countOfCities)
+int sortByDistance(City *citiesArray, const int countOfCities)
+{
+    qsort(citiesArray, countOfCities, sizeof(City), compareCity);
+}
+
+void printNearestCities(const City *citiesArray, const int countOfCities)
 {
     const int minDistance = citiesArray[0].distance;
     puts("Nearest:");
@@ -155,11 +168,11 @@ void printNearestCities(City *citiesArray, const int countOfCities)
 int main(void)
 {
     int countOfCities;
+    City *citiesArray = NULL;
     if (scanf("%d", &countOfCities) == -1)
     {
         goto inputError;
     }
-    City *citiesArray;
     Point userPoint;
     switch (readCities(&citiesArray, countOfCities))
     {
@@ -187,5 +200,6 @@ memoryError:
     return ENOMEM;
 inputError:
     puts(INPUT_ERROR);
+    freeCitiesArray(citiesArray, countOfCities);
     return EBADMSG;
 }
