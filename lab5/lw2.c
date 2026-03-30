@@ -40,16 +40,16 @@ void StrCopy(const char *str1, char **str2)
     (*str2)[size] = '\0';
 }
 
-unsigned char RotateRight(unsigned char byte, int shift, int shiftMax)
+unsigned char RotateRight(const unsigned char byte, int shift, const int shiftMax)
 {
     shift %= shiftMax;
-    return ((byte >> shift) | (byte << (shiftMax - shift)));
+    return byte >> shift | byte << (shiftMax - shift);
 }
 
 unsigned char RotateLeft(const unsigned char byte, int shift, const int maxShift)
 {
     shift %= maxShift;
-    return ((byte << shift) | (byte >> (maxShift - shift)));
+    return byte << shift | byte >> (maxShift - shift);
 }
 
 char *Encrypt(const char *rawStr, const int key)
@@ -80,7 +80,7 @@ char *Decrypt(const char *cryptedStr, const int key)
 
 int main(void)
 {
-    char *str = ReadLine();
+    const char *str = ReadLine();
     const int key = ReadKey();
     char *strCrypted = Encrypt(str, key);
     char *strUncrypted = Decrypt(strCrypted, key);
