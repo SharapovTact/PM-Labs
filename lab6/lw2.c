@@ -87,19 +87,6 @@ memoryError:
     return ENOMEM;
 }
 
-int PrintWorld(const World world)
-{
-    puts("СВЕДЕНИЯ О МИРЕ");
-    printf("Плот: %d %d, направление: %d %d\n", world.raft.pos.x, world.raft.pos.y,
-        world.raft.direction.x, world.raft.direction.y);
-    printf("Кол-во островов: %d\n", world.ilandsCount);
-    for (int i = 0; i < world.ilandsCount; i++)
-    {
-        printf("Остров №%d, pos: %d %d, r = %d\n", i, world.ilands[i].pos.x,
-            world.ilands[i].pos.y, world.ilands[i].r);
-    }
-}
-
 void PrintIntersection(const World world)
 {
     int firstIntersectionIland = -1;
@@ -178,10 +165,10 @@ void FindIntersection(Iland *iland, const Raft raft)
     {
         iland->isIntersection = true;
         double lenDirectionVector = sqrt(pow(dX, 2) + pow(dY, 2));
-        iland->time = t / lenDirectionVector;
         iland->posInter.x = raft.pos.x + t * dX;
         iland->posInter.y = raft.pos.y + t * dY;
         iland->intersectionDistance = t * lenDirectionVector;
+        iland->time = t / lenDirectionVector;
     }
 }
 
@@ -203,5 +190,4 @@ int main(void)
     FindIntersections(&world);
     PrintIntersection(world);
     free(world.ilands);
-    //PrintWorld(world);
 }
