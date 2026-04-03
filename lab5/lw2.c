@@ -20,7 +20,7 @@ int ReadKey()
     }
     return key;
 errorInput:
-    puts("Wrong input key");
+    puts("Wrong input key, set key = 0");
     return MIN_KEY_VALUE;
 }
 

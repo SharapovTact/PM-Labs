@@ -5,6 +5,8 @@
 #include <math.h>
 #include <stdbool.h>
 
+constexpr double EPS = 0.0001;
+
 typedef struct
 {
     int x;
@@ -168,7 +170,7 @@ void FindIntersection(Iland *iland, const Raft raft)
         iland->posInter.x = raft.pos.x + t * dX;
         iland->posInter.y = raft.pos.y + t * dY;
         iland->intersectionDistance = t * lenDirectionVector;
-        iland->time = t / lenDirectionVector;
+        iland->time = t / lenDirectionVector + EPS;
     }
 }
 
