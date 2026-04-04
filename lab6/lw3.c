@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <errno.h>
-#include <limits.h>
 #include <stdlib.h>
 #include <math.h>
 
@@ -13,7 +12,17 @@ typedef struct
     double *items;
 } Matrix;
 
-int CreateMatrix(const int numRows, const int numColumns, Matrix* m)
+void DestroyMatrix(Matrix* matrix)
+{
+    matrix->numRows = 0;
+    matrix->numColumns = 0;
+    if (matrix->items != NULL)
+    {
+        free(matrix->items);
+    }
+}
+
+int CreateMatrix(const int numRows, const int numColumns, Matrix* m) //TODO Вот это лучший вариант, возвращать ошибку, и принимать указатель на матрицу
 {
     if (numRows <= 0 || numColumns <= 0)
     {
@@ -40,6 +49,7 @@ void SetMatrixItemValue(const Matrix* m, const int row, const int column, const 
 {
     if (row < 0 || column < 0 || row >= m->numRows || column >= m->numColumns)
     {
+        DestroyMatrix(m);
         abort();
     }
     *(m->items + (row * m->numColumns + column)) = value;
@@ -49,23 +59,23 @@ double GetMatrixItemValue(const Matrix* m, const int row, const int column)
 {
     if (row < 0 || column < 0 || row >= m->numRows || column >= m->numColumns)
     {
+        DestroyMatrix(m);
         abort();
     }
-    double item = *(m->items + (row * m->numColumns + column));
-    return item;
+    return *(m->items + (row * m->numColumns + column));
 }
 
-Matrix CreateIdentyMatrix(const int size)
+int CreateIdentyMatrix(const int size, Matrix* identyMatrix)
 {
-    Matrix identyMatrix;
-    CreateMatrix(size, size, &identyMatrix);
+    CreateMatrix(size, size, identyMatrix);
     for (int i = 0; i < size; i++)
     {
-        SetMatrixItemValue(&identyMatrix, i, i, 1);
+        SetMatrixItemValue(identyMatrix, i, i, 1);
     }
+    return 0;
 }
 
-bool isEqualMetrices(Matrix* matrix1, Matrix* matrix2)
+bool isEqualMatrices(const Matrix* matrix1, const Matrix* matrix2)
 {
     if (matrix1->numRows == matrix2->numRows && matrix1->numColumns == matrix2->numColumns)
     {
@@ -84,47 +94,33 @@ bool isEqualMetrices(Matrix* matrix1, Matrix* matrix2)
     return false;
 }
 
-Matrix InputMatrix(int *status)
+int InputMatrix(Matrix* matrix)
 {
-    Matrix matrix;
     int numRows;
     int numColumns;
     printf("Введите количество столбцов и строчек: ");
     if (scanf("%d %d", &numRows, &numColumns) == -1)
     {
-        goto inputError;
+        return EBADMSG;
     }
-    if (CreateMatrix(numRows, numColumns, &matrix) != 0)
+    if (CreateMatrix(numRows, numColumns, matrix) != 0)
     {
-        goto inputError;
+        return EBADMSG;
     }
     printf("введите поочерёдно строчки матрицы: \n");
-    for (int i = 0; i < matrix.numRows; i++)
+    for (int i = 0; i < matrix->numRows; i++)
     {
-        for (int j = 0; j < matrix.numColumns; j++)
+        for (int j = 0; j < matrix->numColumns; j++)
         {
             double value;
             if (scanf("%lf", &value) == -1)
             {
-                goto inputError;
+                return EBADMSG;
             }
-            SetMatrixItemValue(&matrix, i, j, value);
+            SetMatrixItemValue(matrix, i, j, value);
         }
     }
-    return matrix;
-inputError:
-    *status = EBADMSG;
-    return matrix;
-}
-
-void DestroyMatrix(Matrix* matrix)
-{
-    matrix->numRows = 0;
-    matrix->numColumns = 0;
-    if (matrix->items != NULL)
-    {
-        free(matrix->items);
-    }
+    return 0;
 }
 
 void PrintMatrix(const Matrix* matrix)
@@ -141,7 +137,6 @@ void PrintMatrix(const Matrix* matrix)
 
 void CopyMatrix(const Matrix* matrixCopy, const Matrix* matrixTo)
 {
-    DestroyMatrix(matrixTo);
     CreateMatrix(matrixCopy->numRows, matrixCopy->numColumns, matrixTo);
     for (int i = 0; i < matrixCopy->numRows; i++)
     {
@@ -152,11 +147,9 @@ void CopyMatrix(const Matrix* matrixCopy, const Matrix* matrixTo)
     }
 }
 
-Matrix MatrixMultiplication(const Matrix* matrix1, const Matrix* matrix2, int* status)
+int MatrixMultiplication(const Matrix* matrix1, const Matrix* matrix2, Matrix* matrixRes)
 {
-    *status = 0;
-    Matrix matrixRes;
-    CreateMatrix(matrix1->numRows, matrix2->numColumns, &matrixRes);
+    CreateMatrix(matrix1->numRows, matrix2->numColumns, matrixRes);
     if (matrix1->numColumns == matrix2->numRows)
     {
         for (int i = 0; i < matrix1->numRows; i++)
@@ -168,36 +161,132 @@ Matrix MatrixMultiplication(const Matrix* matrix1, const Matrix* matrix2, int* s
                 {
                     item += GetMatrixItemValue(matrix1, i, k) * GetMatrixItemValue(matrix2, k,  j);
                 }
-                SetMatrixItemValue(&matrixRes, i, j, item);
+                SetMatrixItemValue(matrixRes, i, j, item);
+            }
+        }
+        return 0;
+    }
+    return 1;
+}
+
+double FindDet(const Matrix* matrix)
+{
+    Matrix m;
+    CopyMatrix(matrix, &m);
+    for (int factorRowId = 0; factorRowId < m.numRows - 1; factorRowId++)
+    {
+        for (int operandRowIndex = factorRowId + 1; operandRowIndex < m.numRows; operandRowIndex++)
+        {
+            const double operandElement = GetMatrixItemValue(&m, operandRowIndex, factorRowId);
+            const double factorElement = GetMatrixItemValue(&m, factorRowId, factorRowId);
+            const double modifier = operandElement / factorElement;
+            for (int elIndex = 0; elIndex < m.numColumns; elIndex++)
+            {
+                const double decrElMatrix = GetMatrixItemValue(&m, factorRowId, elIndex);
+                const double operandElMatrix = GetMatrixItemValue(&m, operandRowIndex, elIndex);
+                SetMatrixItemValue(&m, operandRowIndex, elIndex, operandElMatrix - decrElMatrix * modifier);
             }
         }
     }
-    *status = 1;
-    return matrixRes;
+    double det = 1;
+    for (int i = 0; i < matrix->numRows; i++)
+    {
+        det *= GetMatrixItemValue(&m, i, i);
+    }
+    return det;
 }
 
+int InvMatrix(const Matrix* matrix1, Matrix* matrixRes) //TODO Разнести по функциям
+{
+    double det = FindDet(matrix1);
+    if (fabs(det) <= EPS)
+    {
+        printf("%lf", det);
+        puts("matrix is singular");
+        return 1;
+    }
 
+    CreateIdentyMatrix(matrix1->numRows, matrixRes);
+
+    Matrix workMatrix;
+    CreateMatrix(matrix1->numRows, matrix1->numColumns, &workMatrix);
+    for (int i = 0; i < matrix1->numRows; i++)
+        for (int j = 0; j < matrix1->numColumns; j++)
+            SetMatrixItemValue(&workMatrix, i, j, GetMatrixItemValue(matrix1, i, j));
+
+    int n = matrix1->numRows;
+
+    for (int factorRowId = 0; factorRowId < n; factorRowId++)
+    {
+        double diag = GetMatrixItemValue(&workMatrix, factorRowId, factorRowId);
+        for (int operandRowIndex = factorRowId + 1; operandRowIndex < n; operandRowIndex++)
+        {
+            double factor = GetMatrixItemValue(&workMatrix, operandRowIndex, factorRowId);
+            double modifier = factor / diag;
+            for (int elIndex = 0; elIndex < n; elIndex++)
+            {
+                double workVal = GetMatrixItemValue(&workMatrix, operandRowIndex, elIndex);
+                double workFactor = GetMatrixItemValue(&workMatrix, factorRowId, elIndex);
+                SetMatrixItemValue(&workMatrix, operandRowIndex, elIndex, workVal - workFactor * modifier);
+
+                double resVal = GetMatrixItemValue(matrixRes, operandRowIndex, elIndex);
+                double resFactor = GetMatrixItemValue(matrixRes, factorRowId, elIndex);
+                SetMatrixItemValue(matrixRes, operandRowIndex, elIndex, resVal - resFactor * modifier);
+            }
+        }
+    }
+
+    for (int factorRowId = n - 1; factorRowId > 0; factorRowId--)
+    {
+        double diag = GetMatrixItemValue(&workMatrix, factorRowId, factorRowId);
+        for (int operandRowIndex = factorRowId - 1; operandRowIndex >= 0; operandRowIndex--)
+        {
+            double factor = GetMatrixItemValue(&workMatrix, operandRowIndex, factorRowId);
+            double modifier = factor / diag;
+            for (int elIndex = 0; elIndex < n; elIndex++)
+            {
+                double workVal = GetMatrixItemValue(&workMatrix, operandRowIndex, elIndex);
+                double workFactor = GetMatrixItemValue(&workMatrix, factorRowId, elIndex);
+                SetMatrixItemValue(&workMatrix, operandRowIndex, elIndex, workVal - workFactor * modifier);
+
+                double resVal = GetMatrixItemValue(matrixRes, operandRowIndex, elIndex);
+                double resFactor = GetMatrixItemValue(matrixRes, factorRowId, elIndex);
+                SetMatrixItemValue(matrixRes, operandRowIndex, elIndex, resVal - resFactor * modifier);
+            }
+        }
+    }
+
+    for (int row = 0; row < n; row++)
+    {
+        double diag = GetMatrixItemValue(&workMatrix, row, row);
+        for (int col = 0; col < n; col++)
+        {
+            double resVal = GetMatrixItemValue(matrixRes, row, col);
+            SetMatrixItemValue(matrixRes, row, col, resVal / diag);
+        }
+    }
+
+    DestroyMatrix(&workMatrix);
+    return 0;
+}
 
 int main(void)
 {
-    int status = 0;
-    Matrix matrix1 = InputMatrix(&status);
-    Matrix matrix2 = InputMatrix(&status);
-    if (status == EBADMSG)
+    Matrix matrix1;
+    if (InputMatrix(&matrix1) == EBADMSG)
     {
         goto inputError;
     }
-
-    Matrix matrixRes = MatrixMultiplication(&matrix1, &matrix2, &status);
+    Matrix matrixRes;
+    InvMatrix(&matrix1, &matrixRes);
     PrintMatrix(&matrixRes);
 
     DestroyMatrix(&matrixRes);
     DestroyMatrix(&matrix1);
-    DestroyMatrix(&matrix2);
     return 0;
 inputError:
     puts("Ошибка ввода");
+    DestroyMatrix(&matrixRes);
     DestroyMatrix(&matrix1);
-    DestroyMatrix(&matrix2);
     return EBADMSG;
 }
