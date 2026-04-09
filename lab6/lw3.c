@@ -196,75 +196,86 @@ double FindDet(const Matrix* matrix)
     return det;
 }
 
-int InvMatrix(const Matrix* matrix1, Matrix* matrixRes) //TODO Разнести по функциям
+void CountBottomTriangle(const Matrix* workMatrix, const Matrix* matrixRes)
 {
-    double det = FindDet(matrix1);
+    const int numRows = workMatrix->numRows;
+    for (int factorRowId = 0; factorRowId < numRows; factorRowId++)
+    {
+        const double diag = GetMatrixItemValue(workMatrix, factorRowId, factorRowId);
+        for (int operandRowIndex = factorRowId + 1; operandRowIndex < numRows; operandRowIndex++)
+        {
+            const double factor = GetMatrixItemValue(workMatrix, operandRowIndex, factorRowId);
+            const double modifier = factor / diag;
+            for (int elIndex = 0; elIndex < numRows; elIndex++)
+            {
+                const double workVal = GetMatrixItemValue(workMatrix, operandRowIndex, elIndex);
+                const double workFactor = GetMatrixItemValue(workMatrix, factorRowId, elIndex);
+                SetMatrixItemValue(workMatrix, operandRowIndex, elIndex, workVal - workFactor * modifier);
+
+                const double resVal = GetMatrixItemValue(matrixRes, operandRowIndex, elIndex);
+                const double resFactor = GetMatrixItemValue(matrixRes, factorRowId, elIndex);
+                SetMatrixItemValue(matrixRes, operandRowIndex, elIndex, resVal - resFactor * modifier);
+            }
+        }
+    }
+}
+
+void CountTopTriangle(const Matrix* workMatrix, const Matrix* matrixRes)
+{
+    const int numRows = workMatrix->numRows;
+    for (int factorRowId = numRows - 1; factorRowId > 0; factorRowId--)
+    {
+        const double diag = GetMatrixItemValue(workMatrix, factorRowId, factorRowId);
+        for (int operandRowIndex = factorRowId - 1; operandRowIndex >= 0; operandRowIndex--)
+        {
+            const double factor = GetMatrixItemValue(workMatrix, operandRowIndex, factorRowId);
+            const double modifier = factor / diag;
+            for (int elIndex = 0; elIndex < numRows; elIndex++)
+            {
+                const double workVal = GetMatrixItemValue(workMatrix, operandRowIndex, elIndex);
+                const double workFactor = GetMatrixItemValue(workMatrix, factorRowId, elIndex);
+                SetMatrixItemValue(workMatrix, operandRowIndex, elIndex, workVal - workFactor * modifier);
+
+                const double resVal = GetMatrixItemValue(matrixRes, operandRowIndex, elIndex);
+                const double resFactor = GetMatrixItemValue(matrixRes, factorRowId, elIndex);
+                SetMatrixItemValue(matrixRes, operandRowIndex, elIndex, resVal - resFactor * modifier);
+            }
+        }
+    }
+
+}
+
+void MatrixNormalization(const Matrix* workMatrix, const Matrix* matrixRes)
+{
+    const int numRows = workMatrix->numRows;
+    for (int row = 0; row < numRows; row++)
+    {
+        const double diag = GetMatrixItemValue(workMatrix, row, row);
+        for (int col = 0; col < numRows; col++)
+        {
+            const double resVal = GetMatrixItemValue(matrixRes, row, col);
+            SetMatrixItemValue(matrixRes, row, col, resVal / diag);
+        }
+    }
+}
+
+int InvMatrix(const Matrix* matrix1, Matrix* matrixRes)
+{
+    const double det = FindDet(matrix1);
     if (fabs(det) <= EPS)
     {
         printf("%lf", det);
         puts("matrix is singular");
         return 1;
     }
-
     CreateIdentyMatrix(matrix1->numRows, matrixRes);
-
     Matrix workMatrix;
-    CreateMatrix(matrix1->numRows, matrix1->numColumns, &workMatrix);
-    for (int i = 0; i < matrix1->numRows; i++)
-        for (int j = 0; j < matrix1->numColumns; j++)
-            SetMatrixItemValue(&workMatrix, i, j, GetMatrixItemValue(matrix1, i, j));
+    CopyMatrix(matrix1, &workMatrix);
 
-    int n = matrix1->numRows;
+    CountBottomTriangle(&workMatrix, matrixRes);
+    CountTopTriangle(&workMatrix, matrixRes);
 
-    for (int factorRowId = 0; factorRowId < n; factorRowId++)
-    {
-        double diag = GetMatrixItemValue(&workMatrix, factorRowId, factorRowId);
-        for (int operandRowIndex = factorRowId + 1; operandRowIndex < n; operandRowIndex++)
-        {
-            double factor = GetMatrixItemValue(&workMatrix, operandRowIndex, factorRowId);
-            double modifier = factor / diag;
-            for (int elIndex = 0; elIndex < n; elIndex++)
-            {
-                double workVal = GetMatrixItemValue(&workMatrix, operandRowIndex, elIndex);
-                double workFactor = GetMatrixItemValue(&workMatrix, factorRowId, elIndex);
-                SetMatrixItemValue(&workMatrix, operandRowIndex, elIndex, workVal - workFactor * modifier);
-
-                double resVal = GetMatrixItemValue(matrixRes, operandRowIndex, elIndex);
-                double resFactor = GetMatrixItemValue(matrixRes, factorRowId, elIndex);
-                SetMatrixItemValue(matrixRes, operandRowIndex, elIndex, resVal - resFactor * modifier);
-            }
-        }
-    }
-
-    for (int factorRowId = n - 1; factorRowId > 0; factorRowId--)
-    {
-        double diag = GetMatrixItemValue(&workMatrix, factorRowId, factorRowId);
-        for (int operandRowIndex = factorRowId - 1; operandRowIndex >= 0; operandRowIndex--)
-        {
-            double factor = GetMatrixItemValue(&workMatrix, operandRowIndex, factorRowId);
-            double modifier = factor / diag;
-            for (int elIndex = 0; elIndex < n; elIndex++)
-            {
-                double workVal = GetMatrixItemValue(&workMatrix, operandRowIndex, elIndex);
-                double workFactor = GetMatrixItemValue(&workMatrix, factorRowId, elIndex);
-                SetMatrixItemValue(&workMatrix, operandRowIndex, elIndex, workVal - workFactor * modifier);
-
-                double resVal = GetMatrixItemValue(matrixRes, operandRowIndex, elIndex);
-                double resFactor = GetMatrixItemValue(matrixRes, factorRowId, elIndex);
-                SetMatrixItemValue(matrixRes, operandRowIndex, elIndex, resVal - resFactor * modifier);
-            }
-        }
-    }
-
-    for (int row = 0; row < n; row++)
-    {
-        double diag = GetMatrixItemValue(&workMatrix, row, row);
-        for (int col = 0; col < n; col++)
-        {
-            double resVal = GetMatrixItemValue(matrixRes, row, col);
-            SetMatrixItemValue(matrixRes, row, col, resVal / diag);
-        }
-    }
+    MatrixNormalization(&workMatrix, matrixRes);
 
     DestroyMatrix(&workMatrix);
     return 0;
