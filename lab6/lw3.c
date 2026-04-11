@@ -288,9 +288,15 @@ int main(void)
     {
         goto inputError;
     }
+    PrintMatrix(&matrix1);
+    puts("");
     Matrix matrixRes;
     InvMatrix(&matrix1, &matrixRes);
     PrintMatrix(&matrixRes);
+    puts("");
+    Matrix matrixEnd;
+    MatrixMultiplication(&matrix1, &matrixRes, &matrixEnd);
+    PrintMatrix(&matrixEnd);
 
     DestroyMatrix(&matrixRes);
     DestroyMatrix(&matrix1);
