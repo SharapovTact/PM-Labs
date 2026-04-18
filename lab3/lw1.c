@@ -5,7 +5,7 @@
 
 const int DIFF_IN_LETTER_CASE = 32;
 
-char *readLine(int *isEOF) {
+char *ReadLine(int *isEOF) {
     char *s = NULL;
     size_t len = 0;
     int chCode;
@@ -65,7 +65,7 @@ int isPalindromeLine(char *line) {
 int main(void) {
     int isEOF = 0;
     while (isEOF == 0) {
-        char *line = readLine(&isEOF);
+        char *line = ReadLine(&isEOF);
         if (line == NULL) {
             return ENOMEM;
         }

@@ -7,7 +7,7 @@
 const int DEFAULT_STR_LEN = 4;
 const int DEFAILT_ARRAY_SIZE = 4;
 
-char *readLine(int *isEOF) {
+char *ReadLine(int *isEOF) {
     char *s = NULL;
     size_t len = 0;
     int chCode;
@@ -41,7 +41,7 @@ error:
     return NULL;
 }
 
-void freeArray(char **linesArray, const int countOfLines) {
+void FreeArray(char **linesArray, const int countOfLines) {
     for (int i = countOfLines - 1; i >= 0; i--) {
         free(linesArray[i]);
     }
@@ -65,9 +65,9 @@ char **fillLinesArray(int *countOfLines) {
                 goto error;
             }
             linesArray = tmp;
-            freeArray(tmp, size);
+            FreeArray(tmp, size);
         }
-        char *line = readLine(&isEOF);
+        char *line = ReadLine(&isEOF);
         if (line == NULL) {
             *countOfLines = i + 1;
             goto error;
@@ -79,7 +79,7 @@ char **fillLinesArray(int *countOfLines) {
     }
     return linesArray;
 error:
-    freeArray(linesArray, *countOfLines);
+    FreeArray(linesArray, *countOfLines);
     return NULL;
 }
 
@@ -229,7 +229,7 @@ char **splitFileOnWordsOccurens(char **linesArray,  const int countOfLines, int 
     char **words = malloc(wordsArraySize * sizeof(char*));
     for (int i = 0; i < countOfLines; i++) {
         if (splitLineOnWordsOccurens(linesArray[i], words, &wordsArraySize, uniqWordCount, numberOfOccurens, numberOfOccurensSize) == ENOMEM) {
-            freeArray(words, *uniqWordCount);
+            FreeArray(words, *uniqWordCount);
             puts(words[i]);
             return NULL;
         }
@@ -270,7 +270,7 @@ void printFreqOfWords(char **linesArray,  const int countOfLines) {
 
     lexicoSort(uniqWords, uniqWordCount, numberOfOccurens);
     printOccurensyInfo(uniqWords, uniqWordCount, numberOfOccurens);
-    freeArray(uniqWords, uniqWordCount);
+    FreeArray(uniqWords, uniqWordCount);
     free(numberOfOccurens);
 }
 
@@ -278,5 +278,5 @@ int main() {
     int countOfLines;
     char **textArray = fillLinesArray(&countOfLines);
     printFreqOfWords(textArray, countOfLines);
-    freeArray(textArray, countOfLines);
+    FreeArray(textArray, countOfLines);
 }

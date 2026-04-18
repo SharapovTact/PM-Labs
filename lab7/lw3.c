@@ -4,13 +4,25 @@
 #include <string.h>
 #include "my-str.c"
 
-constexpr int DEFAULT_ARRAY_SIZE = 4;
+constexpr int DEFAULT_ARRAY_SIZE = 1;
 
 typedef struct {
     char* name;
     int quantity;
     float price;
-} Goods;
+} Product;
+
+void FreeGoods(Product** goodsArray, const int goodsArraySize)
+{
+    if (goodsArray != NULL)
+    {
+        for (int i = 0; i < goodsArraySize; i++)
+        {
+            free(goodsArray[i]->name);
+        }
+        free(goodsArray);
+    }
+}
 
 int ReadFileLine(FILE* file, char** line)
 {
@@ -59,7 +71,7 @@ int ReadFileLine(FILE* file, char** line)
     return 1;
 }
 
-void PutGoods(Goods* goodsArray, const char* CSVLine, const int index)
+void PutGoods(Product* goodsArray, const char* CSVLine, const int index)
 {
     char* lineCopy = malloc(strlen(CSVLine) + 1);
     strcpy(lineCopy, CSVLine);
@@ -86,7 +98,7 @@ void PutGoods(Goods* goodsArray, const char* CSVLine, const int index)
     free(lineCopy);
 }
 
-int checkCSVLine(const char* CSVLine)
+int CheckCSVLine(const char* CSVLine)
 {
     int commaCount = 0;
     int index = 0;
@@ -106,11 +118,11 @@ int checkCSVLine(const char* CSVLine)
     return 1;
 }
 
-int ParseGoodsCSV(Goods** goodsArray, const int argc, const char* argv[], int* goodsArraySize)
+int ParseGoodsCSV(Product** goodsArray, const int argc, const char* argv[], int* goodsArraySize)
 {
-    if (argc < 2)
+    if (argc <= 1)
     {
-        fprintf(stderr, "Ошибка: не указан CSV файл\n");
+        perror("Ошибка: не указан CSV файл");
         return 1;
     }
 
@@ -126,7 +138,7 @@ int ParseGoodsCSV(Goods** goodsArray, const int argc, const char* argv[], int* g
     int index = 0;
     *goodsArraySize = DEFAULT_ARRAY_SIZE;
 
-    *goodsArray = malloc(*goodsArraySize * sizeof(Goods));
+    *goodsArray = malloc(*goodsArraySize * sizeof(Product));
     if (*goodsArray == NULL)
     {
         fclose(CSVFile);
@@ -140,24 +152,41 @@ int ParseGoodsCSV(Goods** goodsArray, const int argc, const char* argv[], int* g
         {
             perror("Ошибка чтения файла");
             fclose(CSVFile);
+            if (CSVFile == NULL)
+            {
+                perror("Ошибка закрытия файла");
+            }
+            FreeGoods(goodsArray, *goodsArraySize);
             return 1;
         }
 
-        if (checkCSVLine(CSVLine) == 1)
+        if (CheckCSVLine(CSVLine) == 1)
         {
+            fclose(CSVFile);
+            if (CSVFile == NULL)
+            {
+                perror("Ошибка закрытия");
+            }
             perror("Неверный формат CSV файла");
+            FreeGoods(goodsArray, *goodsArraySize - 1);
+            return 1;
         }
 
         if (index == *goodsArraySize)
         {
             *goodsArraySize *= 2;
-            Goods* new_array = realloc(*goodsArray, *goodsArraySize * sizeof(Goods));
-            if (new_array == NULL)
+            Product* newArray = realloc(*goodsArray, *goodsArraySize * sizeof(Product));
+            if (newArray == NULL)
             {
                 fclose(CSVFile);
+                if (CSVFile == NULL)
+                {
+                    perror("Ошибка закрытия");
+                }
+                FreeGoods(goodsArray, *goodsArraySize);
                 return 1;
             }
-            *goodsArray = new_array;
+            *goodsArray = newArray;
         }
 
         PutGoods(*goodsArray, CSVLine, index);
@@ -183,9 +212,10 @@ char* LowerWord(const char* word)
     return strLowerCase;
 }
 
-void PrintMatches(char* key, const Goods* goodsArray, const int goodsArraySize)
+void PrintMatches(char* key, const Product* goodsArray, const int goodsArraySize)
 {
     int found = 0;
+    float totalCost = 0;
     for (int i = 0; i < goodsArraySize; i++)
     {
         const char* result = strstr(LowerWord(goodsArray[i].name), LowerWord(key));
@@ -195,6 +225,7 @@ void PrintMatches(char* key, const Goods* goodsArray, const int goodsArraySize)
                    goodsArray[i].name,
                    goodsArray[i].quantity,
                    goodsArray[i].price);
+            totalCost += goodsArray[i].quantity * goodsArray[i].price;
             found++;
         }
     }
@@ -202,11 +233,16 @@ void PrintMatches(char* key, const Goods* goodsArray, const int goodsArraySize)
     {
         printf("Товар '%s' не найден\n", key);
     }
+    else
+    {
+        printf("Total: %.2f", &totalCost);
+
+    }
 }
 
 int main(const int argc, const char* argv[])
 {
-    Goods* goodsArray = NULL;
+    Product* goodsArray = NULL;
     int goodsArraySize = 0;
 
     if (ParseGoodsCSV(&goodsArray, argc, argv, &goodsArraySize) == 0)
@@ -219,12 +255,7 @@ int main(const int argc, const char* argv[])
             key = ReadLine();
         }
         free(key);
-
-        for (int i = 0; i < goodsArraySize; i++)
-        {
-            free(goodsArray[i].name);
-        }
-        free(goodsArray);
+        FreeGoods(&goodsArray, goodsArraySize);
         return 0;
     }
     return 1;

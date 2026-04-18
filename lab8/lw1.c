@@ -3,7 +3,7 @@
 #include <string.h>
 #include <errno.h>
 #include <ctype.h>
-const int DEFAULT_STR_LEN = 4;
+constexpr int DEFAULT_STR_LEN = 4;
 
 char *ReadLine(int *isEOF) {
     char *s = NULL;
