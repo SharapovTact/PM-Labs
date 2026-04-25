@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include <ctype.h>
 constexpr int DEFAULT_STR_LEN = 4;
 
 char *ReadLine(int *isEOF) {
@@ -53,15 +52,15 @@ int StrCmp(const void *a, const void *b) {
     return strcmp(*(const char**)a, *(const char**)b);
 }
 
-int PrintStr(char **linesArray, int countOfLines) {
-    qsort(&*linesArray, countOfLines, sizeof(const char*), StrCmp);
+int PrintStr(char **linesArray, const int countOfLines) {
+    qsort(linesArray, countOfLines, sizeof(const char*), StrCmp);
     for (int i = 0; i < countOfLines && i < countOfLines; i++) {
         puts(linesArray[i]);
     }
     return 0;
 }
 
-void FreeArray(char **linesArray, int countOfLines) {
+void FreeArray(char **linesArray, const int countOfLines) {
     for (int i = countOfLines - 1; i >= 0; i--) {
         free(linesArray[i]);
     }
@@ -84,19 +83,19 @@ int main(void) {
     if (linesArray == NULL) {
         goto error_memory;
     }
-    if (FillLinesArray(countOfLines, &*linesArray) != 0) {
+    if (FillLinesArray(countOfLines, linesArray) != 0) {
         free(linesArray);
         goto error_memory;
     }
 
-    PrintStr(&*linesArray, countOfLines);
+    PrintStr(linesArray, countOfLines);
 
-    FreeArray(&*linesArray, countOfLines);
+    FreeArray(linesArray, countOfLines);
     return EXIT_SUCCESS;
 
 error_input:
     return EXIT_FAILURE;
 error_memory:
-    FreeArray(&*linesArray, countOfLines);
+    FreeArray(linesArray, countOfLines);
     return ENOMEM;
 }

@@ -3,24 +3,20 @@
 #include <string.h>
 #include "my-str.c"
 
-int WriteCompressedLastByte(FILE* OutputFile, int byteCount, const char ch)
-{
-    fputc(byteCount, OutputFile);
-    fputc(ch, OutputFile);
-    return 0;
-}
 
-int WriteCompressedBytes(FILE* OutputFile, int byteCount, const char ch)
+
+int WriteCompressedBytes(FILE* OutputFile, int byteCount, const int ch)
 {
-    for (int i = 0; i < byteCount / 255; i++)
+    while (byteCount >= 255)
     {
-        byteCount -= 255;
         fputc(255, OutputFile);
         fputc(ch, OutputFile);
+        byteCount -= 255;
     }
     if (byteCount > 0)
     {
-        return WriteCompressedLastByte(OutputFile, byteCount, ch);
+        fputc(byteCount, OutputFile);
+        fputc(ch, OutputFile);
     }
     return 0;
 }
@@ -31,6 +27,7 @@ int ReadWriteWithCompress(FILE* InputFile, FILE* OutputFile)
     if ((ch = fgetc(InputFile)) == EOF) {
         return 0;
     }
+    //TODO завести структуру хранящую состояние компрессора
     int chPrev = ch;
     int repeatCounter = 1;
 
@@ -50,23 +47,25 @@ int ReadWriteWithCompress(FILE* InputFile, FILE* OutputFile)
     return WriteCompressedBytes(OutputFile, repeatCounter, chPrev);
 }
 
-int Compress(const char* argv[])
+int Compress(const char* inp, const char* out) //TODO принять нормальное кло-во аргументов
 {
-    FILE* InputFile = fopen(argv[2], "r");
-    if (InputFile == NULL)
+    //TODO с маленькой буквы
+    FILE* inputFile = fopen(inp, "rb");
+    if (inputFile == NULL)
     {
         perror("Ошибка открытия файла");
         return 1;
     }
-    FILE* OutputFile = fopen(argv[3], "w");
-    if (OutputFile == NULL)
+    FILE* outputFile = fopen(out, "wb");
+    if (outputFile == NULL)
     {
+        //TODO закрыть оба файла
         perror("Ошибка открытия файла");
         return 1;
     }
-    int returnCode = ReadWriteWithCompress(InputFile, OutputFile);
-    fclose(InputFile);
-    fclose(OutputFile);
+    int returnCode = ReadWriteWithCompress(inputFile, outputFile);
+    fclose(inputFile);
+    fclose(outputFile);
     return returnCode;
 }
 
@@ -75,7 +74,7 @@ int ReadWriteWithDecompress(FILE* InputFile, FILE* OutputFile)
     int chCount;
     while ((chCount = fgetc(InputFile)) != EOF)
     {
-        const char ch = fgetc(InputFile);
+        const int ch = fgetc(InputFile);
         if (ch == EOF) {
             perror("Ошибка: нечетное количество байт");
             return 1;
@@ -88,23 +87,23 @@ int ReadWriteWithDecompress(FILE* InputFile, FILE* OutputFile)
     return 0;
 }
 
-int Decompress(const char* argv[])
+int Decompress(const int argc, const char* argv[])
 {
-    FILE* InputFile = fopen(argv[2], "r");
-    if (InputFile == NULL)
+    FILE* inputFile = fopen(argv[2], "rb");
+    if (inputFile == NULL)
     {
         perror("Ошибка открытия файла");
         return 1;
     }
-    FILE* OutputFile = fopen(argv[3], "w");
-    if (OutputFile == NULL)
+    FILE* outputFile = fopen(argv[3], "wb");
+    if (outputFile == NULL)
     {
         perror("Ошибка открытия файла");
         return 1;
     }
-    int returnCode = ReadWriteWithDecompress(InputFile, OutputFile);
-    fclose(InputFile);
-    fclose(OutputFile);
+    int returnCode = ReadWriteWithDecompress(inputFile, outputFile);
+    fclose(inputFile);
+    fclose(outputFile);
     return returnCode;
 }
 
@@ -117,11 +116,11 @@ int main(const int argc, const char* argv[])
     }
     if (strcmp(argv[1], "-compress") == 0)
     {
-        return Compress(argv);
+        return Compress(argv[2], argv[3]);
     }
     if (strcmp(argv[1], "-decompress") == 0)
     {
-        return Decompress(argv);
+        return Decompress(argv[1], "-compress");
     }
     perror("Ошибка: неверный первый аргумент");
     return 1;
